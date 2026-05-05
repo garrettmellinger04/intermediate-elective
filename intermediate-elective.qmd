@@ -1,0 +1,10 @@
+---
+title: "intermediate-elective"
+date: "2026-05-10"
+author: "Garrett Mellinger"
+format: pdf
+execute:
+  message: false
+  warning: false
+---
+
