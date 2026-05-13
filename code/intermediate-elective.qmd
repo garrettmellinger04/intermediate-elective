@@ -91,8 +91,10 @@ poaceae_species <- c(
 )
 
 grassland <- veg |> 
-  # keep only NCOS Mesa grassland transects and only grass species
+      # keep only 2025 NCOS Mesa grassland transects and only grass species
   filter(
+    year == 2025,
+
     str_detect(transect_name, "GL"),
     site == "ncos",
     psoc %in% poaceae_species
@@ -107,12 +109,18 @@ grass_counts <- grassland |>
 # Coding
 
 ```{r}
-#| label: circular grass plot
-#| fig-width: 8
-#| fig-height: 8
+#| label: circular-grass-plot
+#| fig-width: 5.5
+#| fig-height: 2.5
 
 # create plot-ready data from the already-sorted grass species counts
 grass_plot <- grass_counts
+
+# create cleaned species names for the legend
+grass_plot <- grass_plot |>
+  mutate(
+    psoc_clean = str_replace_all(psoc, "_", " ")
+  )
 
 # set the number of empty bars to create a visual gap in the circle
 empty_bar <- 2 
@@ -120,7 +128,8 @@ empty_bar <- 2
 # create empty rows that will become the gap in the circular plot
 to_add <- data.frame(
   psoc = rep(NA, empty_bar),
-  occurrence_count = rep(NA, empty_bar)
+  occurrence_count = rep(NA, empty_bar),
+  psoc_clean = rep(NA, empty_bar)
 )
 
 # add the empty rows to the plot dataset
@@ -130,24 +139,12 @@ grass_plot <- bind_rows(grass_plot, to_add)
 grass_plot <- grass_plot |>
   mutate(id = row_number())
 
-# create a separate dataset for label positions
-label_data <- grass_plot
-
-# calculate the total number of bars, including the empty bars
-number_of_bar <- nrow(label_data)
-
-# calculate the angle for each species label
-angle <- 90 - 360 * (label_data$id - 0.5) / number_of_bar
-
-# adjust label alignment based on where the label falls around the circle
-label_data$hjust <- ifelse(angle < -90, 1, 0)
-
-# flip labels on the bottom half of the circle so they are readable
-label_data$angle <- ifelse(angle < -90, angle + 180, angle)
+# calculate maximum observation count for proportional plot sizing
+max_count <- max(grass_plot$occurrence_count, na.rm = TRUE)
 
 # create one color for each grass species
 palette <- colorRampPalette(brewer.pal(11, "Spectral"))(
-  length(unique(na.omit(grass_plot$psoc)))
+  length(unique(na.omit(grass_plot$psoc_clean)))
 )
 
 # create the circular bar plot
@@ -157,73 +154,97 @@ p <- ggplot(grass_plot) +
     aes(
       x = as.factor(id),
       y = occurrence_count,
-      fill = psoc
+      fill = psoc_clean
     ),
-    show.legend = FALSE
+    width = 1
   ) +
-  # apply the custom color palette
-  scale_fill_manual(values = palette) +
-  # create empty space inside the circle for title text
-  ylim(
-    -5,
-    max(grass_plot$occurrence_count, na.rm = TRUE) + 5
+  # apply custom colors and remove NA from legend
+  scale_fill_manual(
+    values = palette,
+    name = "Grass species",
+    na.translate = FALSE
+  ) +
+  # enlarge the circular chart by tightening the radial scale
+  scale_y_continuous(
+    limits = c(-max_count * 0.14, max_count * 0.95),
+    expand = c(0, 0)
   ) +
   # convert the bar chart into a circular layout
-  coord_polar(start = 0) +
+  coord_polar(start = 0, clip = "off") +
+  # add title and subtitle above the plot
+  labs(
+    title = "Observations of Grass Species in the NCOS Mesa Grassland",
+    subtitle = "Bar height shows number of observations per grass species in 2025"
+  ) +
   # use a clean background
   theme_minimal() +
   # remove axes, gridlines, and extra plot clutter
-  theme(
-    axis.text = element_blank(),
-    axis.title = element_blank(),
-    panel.grid = element_blank(),
-    plot.margin = margin(10, 10, 10, 10)
-  ) +
-    # add a title in the center of the circular plot
-  annotate(
-    geom = "text",
-    x = 0,
-    y = -4,
+ theme(
+  axis.text = element_blank(),
+  axis.title = element_blank(),
+  panel.grid = element_blank(),
+  
+  # keep the polar chart circular and allow it to use more panel space
+  aspect.ratio = 1,
+  
+  # center title and subtitle across the full plot area
+  plot.title.position = "plot",
+  plot.title = element_text(
+    size = 13,
+    face = "bold",
     hjust = 0.5,
-    vjust = 1,
-    label = "n Observation of Grass Species in the NCOS Mesa grassland",
-    size = 4.3,
-    lineheight = 0.8,
-    fontface = "bold",
-    color = "black"
-  ) +
-  # add a short explanation of what bar height means
-  annotate(
-    geom = "text",
-    x = 0,
-    y = max(grass_plot$occurrence_count, na.rm = TRUE) + 4,
+    margin = margin(b = 1)
+  ),
+  plot.subtitle = element_text(
+    size = 9,
     hjust = 0.5,
-    vjust = 1,
-    label = "Bar height shows number of observations per grass species",
-    size = 2.8,
-    color = "black"
+    margin = margin(b = -8)
+  ),
+    
+    # shrink outer blank space
+    plot.margin = margin(0.2, 0.2, 0.2, 0.2),
+    
+   # keep legend on right but make it more compact so the circle can grow
+  legend.position = "right",
+  legend.direction = "vertical",
+  legend.title = element_text(size = 7.5, face = "bold"),
+  legend.text = element_text(size = 5.3),
+  legend.key.size = unit(0.18, "cm"),
+  legend.spacing.y = unit(0, "cm"),
+  legend.margin = margin(0, 0, 0, -14),
+  legend.box.margin = margin(0, 0, 0, -18),
+    
+    # force white background
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.background = element_rect(fill = "white", color = NA)
   ) +
-   # add species names around the outside of the circle
-  geom_text(
-    data = label_data,
-    aes(
-      x = id,
-      y = occurrence_count + 1,
-      label = psoc,
-      hjust = hjust
-    ),
-    color = "black",
-    fontface = "bold",
-    alpha = 0.7,
-    size = 3,
-    angle = label_data$angle,
-    inherit.aes = FALSE
+  # keep legend in one compact vertical column
+  guides(
+    fill = guide_legend(
+      ncol = 1,
+      byrow = TRUE
+    )
   )
 
 # show the finished plot
 p
 ```
 
+
+```{r}
+#| label: saving-plot
+
+# save the final circular grass species plot as a PNG file
+ggsave(
+  filename = here("code", "grass_species_commonness.png"),
+  plot = p,
+  width = 5.5,
+  height = 2.5,
+  units = "in",
+  dpi = 300,
+  bg = "white"
+)
+```
 
 
 ```{r}
