@@ -79,6 +79,10 @@ grassland <- veg |>
     site == "ncos",
     psoc %in% poaceae_species
   )
+
+# calculating number of observations for each species
+grass_counts <- grassland |>
+  count(psoc, sort = TRUE, name = "occurrence_count")
 ```
 
 
