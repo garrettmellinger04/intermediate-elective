@@ -104,6 +104,127 @@ grass_counts <- grassland |>
   arrange(desc(occurrence_count))
 ```
 
+# Coding
+
+```{r}
+#| label: circular grass plot
+#| fig-width: 8
+#| fig-height: 8
+
+# create plot-ready data from the already-sorted grass species counts
+grass_plot <- grass_counts
+
+# set the number of empty bars to create a visual gap in the circle
+empty_bar <- 2 
+
+# create empty rows that will become the gap in the circular plot
+to_add <- data.frame(
+  psoc = rep(NA, empty_bar),
+  occurrence_count = rep(NA, empty_bar)
+)
+
+# add the empty rows to the plot dataset
+grass_plot <- bind_rows(grass_plot, to_add)
+
+# create an id column to control where each bar appears around the circle
+grass_plot <- grass_plot |>
+  mutate(id = row_number())
+
+# create a separate dataset for label positions
+label_data <- grass_plot
+
+# calculate the total number of bars, including the empty bars
+number_of_bar <- nrow(label_data)
+
+# calculate the angle for each species label
+angle <- 90 - 360 * (label_data$id - 0.5) / number_of_bar
+
+# adjust label alignment based on where the label falls around the circle
+label_data$hjust <- ifelse(angle < -90, 1, 0)
+
+# flip labels on the bottom half of the circle so they are readable
+label_data$angle <- ifelse(angle < -90, angle + 180, angle)
+
+# create one color for each grass species
+palette <- colorRampPalette(brewer.pal(11, "Spectral"))(
+  length(unique(na.omit(grass_plot$psoc)))
+)
+
+# create the circular bar plot
+p <- ggplot(grass_plot) +
+  # draw one bar for each grass species
+  geom_col(
+    aes(
+      x = as.factor(id),
+      y = occurrence_count,
+      fill = psoc
+    ),
+    show.legend = FALSE
+  ) +
+  # apply the custom color palette
+  scale_fill_manual(values = palette) +
+  # create empty space inside the circle for title text
+  ylim(
+    -5,
+    max(grass_plot$occurrence_count, na.rm = TRUE) + 5
+  ) +
+  # convert the bar chart into a circular layout
+  coord_polar(start = 0) +
+  # use a clean background
+  theme_minimal() +
+  # remove axes, gridlines, and extra plot clutter
+  theme(
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    panel.grid = element_blank(),
+    plot.margin = margin(10, 10, 10, 10)
+  ) +
+    # add a title in the center of the circular plot
+  annotate(
+    geom = "text",
+    x = 0,
+    y = -4,
+    hjust = 0.5,
+    vjust = 1,
+    label = "n Observation of Grass Species in the NCOS Mesa grassland",
+    size = 4.3,
+    lineheight = 0.8,
+    fontface = "bold",
+    color = "black"
+  ) +
+  # add a short explanation of what bar height means
+  annotate(
+    geom = "text",
+    x = 0,
+    y = max(grass_plot$occurrence_count, na.rm = TRUE) + 4,
+    hjust = 0.5,
+    vjust = 1,
+    label = "Bar height shows number of observations per grass species",
+    size = 2.8,
+    color = "black"
+  ) +
+   # add species names around the outside of the circle
+  geom_text(
+    data = label_data,
+    aes(
+      x = id,
+      y = occurrence_count + 1,
+      label = psoc,
+      hjust = hjust
+    ),
+    color = "black",
+    fontface = "bold",
+    alpha = 0.7,
+    size = 3,
+    angle = label_data$angle,
+    inherit.aes = FALSE
+  )
+
+# show the finished plot
+p
+```
+
+
 
 ```{r}
 
