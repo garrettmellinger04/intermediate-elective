@@ -110,8 +110,8 @@ grass_counts <- grassland |>
 
 ```{r}
 #| label: circular-grass-plot
-#| fig-width: 5.5
-#| fig-height: 2.5
+#| fig-width: 7
+#| fig-height: 6
 
 # create plot-ready data from the already-sorted grass species counts
 grass_plot <- grass_counts
@@ -142,6 +142,15 @@ grass_plot <- grass_plot |>
 # calculate maximum observation count for proportional plot sizing
 max_count <- max(grass_plot$occurrence_count, na.rm = TRUE)
 
+# create label data for count labels around the circular plot
+label_data <- grass_plot |>
+  filter(!is.na(occurrence_count)) |>
+  mutate(
+    angle = 90 - 360 * (id - 0.5) / nrow(grass_plot),
+    hjust = ifelse(angle < -90, 1, 0),
+    angle = ifelse(angle < -90, angle + 180, angle)
+  )
+
 # create one color for each grass species
 palette <- colorRampPalette(brewer.pal(11, "Spectral"))(
   length(unique(na.omit(grass_plot$psoc_clean)))
@@ -164,56 +173,67 @@ p <- ggplot(grass_plot) +
     name = "Grass species",
     na.translate = FALSE
   ) +
-  # enlarge the circular chart by tightening the radial scale
+  # make the plot proportions closer to the original IKEA circular bar chart
   scale_y_continuous(
-    limits = c(-max_count * 0.14, max_count * 0.95),
+    limits = c(-max_count * 0.70, max_count * 1.12),
     expand = c(0, 0)
   ) +
   # convert the bar chart into a circular layout
   coord_polar(start = 0, clip = "off") +
-  # add title and subtitle above the plot
-  labs(
-    title = "Observations of Grass Species in the NCOS Mesa Grassland",
-    subtitle = "Bar height shows number of observations per grass species in 2025"
+  # add count labels around the outside of the circle
+  geom_text(
+    data = label_data,
+    aes(
+      x = as.factor(id),
+      y = occurrence_count + max_count * 0.06,
+      label = occurrence_count,
+      hjust = hjust,
+      angle = 0,
+    ),
+    size = 2.4,
+    fontface = "bold",
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+  # add title inside the center hole, like the original inspiration plot
+  annotate(
+    geom = "text",
+    x = 0,
+    y = -max_count * 0.52,
+    hjust = 0.5,
+    vjust = 0.65,
+    label = "2025 Number of\nObservations of\nGrass Species in\nNCOS Grasslands",
+    size = 4.3,
+    lineheight = 0.85,
+    fontface = "bold",
+    color = "black"
   ) +
   # use a clean background
   theme_minimal() +
   # remove axes, gridlines, and extra plot clutter
- theme(
-  axis.text = element_blank(),
-  axis.title = element_blank(),
-  panel.grid = element_blank(),
-  
-  # keep the polar chart circular and allow it to use more panel space
-  aspect.ratio = 1,
-  
-  # center title and subtitle across the full plot area
-  plot.title.position = "plot",
-  plot.title = element_text(
-    size = 13,
-    face = "bold",
-    hjust = 0.5,
-    margin = margin(b = 1)
-  ),
-  plot.subtitle = element_text(
-    size = 9,
-    hjust = 0.5,
-    margin = margin(b = -8)
-  ),
-    
-    # shrink outer blank space
-    plot.margin = margin(0.2, 0.2, 0.2, 0.2),
-    
-   # keep legend on right but make it more compact so the circle can grow
-  legend.position = "right",
-  legend.direction = "vertical",
-  legend.title = element_text(size = 7.5, face = "bold"),
-  legend.text = element_text(size = 5.3),
-  legend.key.size = unit(0.18, "cm"),
-  legend.spacing.y = unit(0, "cm"),
-  legend.margin = margin(0, 0, 0, -14),
-  legend.box.margin = margin(0, 0, 0, -18),
-    
+  theme(
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    panel.grid = element_blank(),
+
+    # remove external title spacing because title is inside the plot
+    plot.title = element_blank(),
+    plot.subtitle = element_blank(),
+
+    # reduce outer blank space
+    plot.margin = margin(0, 0, 0, 0),
+
+    # keep legend on the right but compact
+    legend.position = "right",
+    legend.direction = "vertical",
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 8),
+    legend.key.size = unit(0.20, "cm"),
+    legend.spacing.y = unit(0.01, "cm"),
+    legend.box.spacing = unit(0.05, "cm"),
+    legend.margin = margin(0, 0, 0, -8),
+    legend.box.margin = margin(0, 0, 0, -10),
+
     # force white background
     plot.background = element_rect(fill = "white", color = NA),
     panel.background = element_rect(fill = "white", color = NA)
@@ -222,7 +242,9 @@ p <- ggplot(grass_plot) +
   guides(
     fill = guide_legend(
       ncol = 1,
-      byrow = TRUE
+      byrow = TRUE,
+      keywidth = unit(0.20, "cm"),
+      keyheight = unit(0.20, "cm")
     )
   )
 
@@ -238,8 +260,8 @@ p
 ggsave(
   filename = here("code", "grass_species_commonness.png"),
   plot = p,
-  width = 5.5,
-  height = 2.5,
+  width = 6,
+  height = 3,
   units = "in",
   dpi = 300,
   bg = "white"
