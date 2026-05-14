@@ -29,4 +29,6 @@ library(RColorBrewer)
 ```
 ## Rendered output
 
+The rendered visualization is here ![Grass species commonness plot](code/grass_species_commonness.png)
+
 The rendered output for the code in this repository is [here](https://github.com/garrettmellinger04/intermediate-elective/blob/main/code/intermediate-elective.pdf)
