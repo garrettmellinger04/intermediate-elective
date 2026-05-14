@@ -34,8 +34,6 @@ library(RColorBrewer)
 
 # reading in data
 veg <- read_csv(here("data", "veg.csv"))
-
-metadata <- read_csv(here("data", "vp_veg_metadata.csv"))
 ```
 
 
