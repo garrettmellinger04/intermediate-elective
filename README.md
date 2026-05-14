@@ -1,5 +1,4 @@
-# Intermediate Elective
-intermediate elective 2 -- vernal pool vegetation and aquatic invertebrates
+# Intermediate Elective 2
 
 ## General information
 
