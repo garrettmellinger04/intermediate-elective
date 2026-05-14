@@ -13,7 +13,7 @@ execute:
 ## Packages
 
 ```{r}
-#|label: packages
+#| label: packages
 
 # general use
 library(tidyverse)
@@ -44,7 +44,7 @@ metadata <- read_csv(here("data", "vp_veg_metadata.csv"))
 I chose Cristina Cametti’s “IKEA most popular designers” for my inspiration. This is a reasonable choice for the vegetation dataset because there are a large number of different grass species present on the NCOS mesa, just as there are a large number of different IKEA designers. Each grass species found on the NCOS Mesa will be represented by its own color. The height of each bar will represent the total count of unique observations for each species in 2025. The labels at the end of each bar denote count.
 
 # 2. Planning
-
+![Sketch of planned circular grass species plot](20260513_173801.jpg)
 
 # 3. Code
 
@@ -210,7 +210,7 @@ p <- ggplot(grass_plot) +
     y = -max_count * 0.52,
     hjust = 0.5,
     vjust = 0.65,
-    label = "2025 Number of\nObservations of\nGrass Species in\nNCOS Grasslands",
+    label = "2025 n of\nObservations of\nGrass Species in\nNCOS Grasslands",
     size = 4.3,
     lineheight = 0.85,
     fontface = "bold",
@@ -241,7 +241,7 @@ p <- ggplot(grass_plot) +
     legend.box.spacing = unit(0.05, "cm"),
     legend.margin = margin(0, 0, 0, -8),
     legend.box.margin = margin(0, 0, 0, -10),
-  )
+  ) +
 # keep legend in one vertical column
 guides(
   fill = guide_legend(
